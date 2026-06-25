@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=768, initial-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="Dashboard">
+  <title>Dashboard</title>
+  <style>
+    * {
+      -webkit-box-sizing: border-box;
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-font-smoothing: antialiased;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      width: 768px;
+      height: 1024px;
+      overflow: hidden;
+      background: #000;
+      color: #fff;
+      font-family: -apple-system, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    }
+
+    #app {
+      display: -webkit-flex;
+      display: flex;
+      -webkit-flex-direction: column;
+      flex-direction: column;
+      height: 1024px;
+      padding-top: 20px; /* iOS status bar */
+    }
+
+    /* ── Section label ──────────────────────────────────────── */
+    .lbl {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 3.5px;
+      color: rgba(255,255,255,0.38);
+      text-transform: uppercase;
+    }
+
+    /* ── Forecast row shared ───────────────────────────────── */
+    .fc-row {
+      display: -webkit-flex;
+      display: flex;
+      -webkit-align-items: center;
+      align-items: center;
+    }
+    .fc-icon {
+      width: 26px;
+      font-size: 15px;
+      text-align: center;
+    }
+    .fc-stat {
+      -webkit-flex: 1;
+      flex: 1;
+      font-size: 11px;
+      color: rgba(255,255,255,0.6);
+      text-align: right;
+    }
+    .dimmer { color: rgba(255,255,255,0.45); }
+
+    /* ─────────────────────────────────────────────────────────
+       TOP ROW — weather
+    ───────────────────────────────────────────────────────── */
+    #top-row {
+      display: -webkit-flex;
+      display: flex;
+      -webkit-flex-direction: row;
+      flex-direction: row;
+      -webkit-flex-shrink: 0;
+      flex-shrink: 0;
+      height: 385px;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+
+    /* ── Left: current + hourly ───────────────── */
+    #wx-left {
+      width: 50%;
+      padding: 14px 14px 10px 16px;
+      border-right: 1px solid rgba(255,255,255,0.1);
+      display: -webkit-flex;
+      display: flex;
+      -webkit-flex-direction: column;
+      flex-direction: column;
+    }
+
+    #current-main {
+      display: -webkit-flex;
+      display: flex;
+      -webkit-align-items: center;
+      align-items: center;
+      margin-top: 8px;
+      margin-bottom: 4px;
+    }
+    #current-icon {
+      font-size: 50px;
+      margin-right: 8px;
+      line-height: 1;
+    }
+    #current-temp {
+      font-size: 68px;
+      font-weight: 100;
+      line-height: 1;
+      letter-spacing: -1px;
+    }
+
+    #current-desc {
+      font-size: 14px;
+      color: rgba(255,255,255,0.68);
+      margin-bottom: 8px;
+    }
+
+    .detail-line {
+      display: -webkit-flex;
+      display: flex;
+      -webkit-flex-direction: row;
+      flex-direction: row;
+      font-size: 12px;
+      color: rgba(255,255,255,0.62);
+      margin-bottom: 3px;
+    }
+    .detail-line span {
+      margin-right: 12px;
+    }
+
+    #hourly-divider {
+      border: none;
+      border-top: 1px solid rgba(255,255,255,0.1);
+      margin: 8px 0 6px 0;
+    }
+
+    /* Hourly column headers */
+    .fc-hdr {
+      display: -webkit-flex;
+      display: flex;
+      -webkit-align-items: center;
+      align-items: center;
+      padding-bottom: 3px;
+      margin-bottom: 1px;
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+    }
+    .hdr-lbl {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 2.5px;
+      color: rgba(255,255,255,0.35);
+      text-transform: uppercase;
+    }
+
+    /* Hourly row */
+    .fc-time {
+      width: 42px;
+      font-size: 12px;
+      color: rgba(255,255,255,0.6);
+    }
+    .fc-temp {
+      width: 44px;
+      font-size: 13px;
+      font-weight: 300;
+    }
+
+    #hourly-list {
+      -webkit-flex: 1;
+      flex: 1;
+      display: -webkit-flex;
+      display: flex;
+      -webkit-flex-direction: column;
+      flex-direction: column;
+      -webkit-justify-content: space-around;
+      justify-content: space-around;
+    }
+    #hourly-list .fc-row {
+      padding: 3px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+
+    /* ── Right: daily forecast ─────────────────── */
+    #wx-right {
+      width: 50%;
+      padding: 14px 16px 10px 14px;
+      display: -webkit-flex;
+      display: flex;
+      -webkit-flex-direction: column;
+      flex-direction: column;
+    }
+
+    .fc-day {
+      width: 38px;
+      font-size: 12px;
+      color: rgba(255,255,255,0.6);
+    }
+    .fc-dtemp {
+      width: 82px;
+      font-size: 13px;
+      font-weight: 300;
+    }
+    .fc-wind {
+      width: 50px;
+      font-size: 11px;
+      color: rgba(255,255,255,0.6);
+      text-align: right;
+    }
+
+    #daily-list {
+      -webkit-flex: 1;
+      flex: 1;
+      display: -webkit-flex;
+      display: flex;
+      -webkit-flex-direction: column;
+      flex-direction: column;
+      -webkit-justify-content: space-around;
+      justify-content: space-around;
+      margin-top: 6px;
+    }
+    #daily-list .fc-row {
+      padding: 4px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+
+    /* ─────────────────────────────────────────────────────────
+       CLOCK SECTION
+    ───────────────────────────────────────────────────────── */
+    #clock-section {
+      -webkit-flex-shrink: 0;
+      flex-shrink: 0;
+      height: 172px;
+      display: -webkit-flex;
+      display: flex;
+      -webkit-flex-direction: column;
+      flex-direction: column;
+      -webkit-align-items: center;
+      align-items: center;
+      -webkit-justify-content: center;
+      justify-content: center;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+
+    #date-display {
+      font-size: 17px;
+      font-weight: 300;
+      color: rgba(255,255,255,0.62);
+      letter-spacing: 0.5px;
+      margin-bottom: 2px;
+    }
+
+    #time-wrapper {
+      display: -webkit-flex;
+      display: flex;
+      -webkit-align-items: flex-start;
+      align-items: flex-start;
+    }
+    #clock-hm {
+      font-size: 105px;
+      font-weight: 100;
+      line-height: 1;
+      letter-spacing: -2px;
+    }
+    #time-seconds {
+      font-size: 50px;
+      font-weight: 100;
+      color: rgba(255,255,255,0.38);
+      padding-top: 14px;
+      padding-left: 3px;
+      letter-spacing: 0;
+    }
+
+    /* ─────────────────────────────────────────────────────────
+       CALENDAR SECTION
+    ───────────────────────────────────────────────────────── */
+    #calendar-section {
+      -webkit-flex: 1;
+      flex: 1;
+      padding: 12px 16px 8px 16px;
+      overflow: hidden;
+      display: -webkit-flex;
+      display: flex;
+      -webkit-flex-direction: column;
+      flex-direction: column;
+    }
+
+    #cal-header {
+      margin-bottom: 6px;
+    }
+
+    #calendar-events {
+      -webkit-flex: 1;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    .cal-event {
+      display: -webkit-flex;
+      display: flex;
+      -webkit-justify-content: space-between;
+      justify-content: space-between;
+      -webkit-align-items: center;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .cal-name {
+      font-size: 15px;
+      font-weight: 300;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 62%;
+      padding-right: 8px;
+    }
+    .cal-time {
+      font-size: 13px;
+      color: rgba(255,255,255,0.5);
+      -webkit-flex-shrink: 0;
+      flex-shrink: 0;
+      text-align: right;
+    }
+    .cal-event.soon .cal-time {
+      color: rgba(255,255,180,0.85);
+    }
+    .cal-empty {
+      font-size: 14px;
+      color: rgba(255,255,255,0.3);
+      text-align: center;
+      padding-top: 20px;
+    }
+
+    /* Loading states */
+    .loading {
+      color: rgba(255,255,255,0.2);
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ── TOP ROW: WEATHER ─────────────────────────────────── -->
+  <div id="top-row">
+
+    <!-- Left: current conditions + hourly -->
+    <div id="wx-left">
+      <span class="lbl">Today's Weather</span>
+
+      <div id="current-main">
+        <span id="current-icon">☁</span>
+        <span id="current-temp">--°</span>
+      </div>
+
+      <div id="current-desc" class="loading">Loading…</div>
+
+      <div class="detail-line">
+        <span id="detail-hilo">--° / --°</span>
+        <span id="detail-sunrise">↑ --:--</span>
+        <span id="detail-sunset">↓ --:--</span>
+      </div>
+      <div class="detail-line">
+        <span id="detail-humid">💧 --%</span>
+        <span id="detail-uv">UV --</span>
+      </div>
+
+      <hr id="hourly-divider">
+
+      <!-- Hourly header -->
+      <div class="fc-hdr">
+        <span class="hdr-lbl" style="width:42px">Hourly</span>
+        <span class="fc-icon"></span>
+        <span class="fc-temp"></span>
+        <span class="fc-stat" style="font-size:13px">🌧</span>
+        <span class="fc-stat" style="font-size:13px">💧</span>
+      </div>
+
+      <div id="hourly-list">
+        <div class="loading" style="padding:8px 0">Loading…</div>
+      </div>
+    </div>
+
+    <!-- Right: 7-day forecast -->
+    <div id="wx-right">
+      <span class="lbl">Forecast</span>
+
+      <!-- Daily column header -->
+      <div class="fc-hdr" style="margin-top:6px">
+        <span class="fc-day"></span>
+        <span class="fc-icon"></span>
+        <span class="fc-dtemp" style="font-size:10px;color:rgba(255,255,255,0.35)">Hi / Lo</span>
+        <span class="fc-stat" style="font-size:13px">🌧</span>
+        <span class="fc-wind" style="font-size:13px;text-align:right">💨</span>
+      </div>
+
+      <div id="daily-list">
+        <div class="loading" style="padding:8px 0">Loading…</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── CLOCK ─────────────────────────────────────────────── -->
+  <div id="clock-section">
+    <div id="date-display">Loading…</div>
+    <div id="time-wrapper">
+      <span id="clock-hm">--:--</span><span id="time-seconds">--</span>
+    </div>
+  </div>
+
+  <!-- ── CALENDAR ──────────────────────────────────────────── -->
+  <div id="calendar-section">
+    <div id="cal-header">
+      <span class="lbl">Bob's Calendar</span>
+    </div>
+    <div id="calendar-events">
+      <div class="loading">Loading…</div>
+    </div>
+  </div>
+
+</div><!-- #app -->
+
+<script>
+/* ── Strictly ES5 — no arrow functions, no const/let, no template literals ── */
+(function () {
+  'use strict';
+
+  // ── Utility ──────────────────────────────────────────────
+  function pad(n) { return n < 10 ? '0' + n : String(n); }
+  function el(id) { return document.getElementById(id); }
+  function setText(id, t) { var e = el(id); if (e) e.textContent = t; }
+  function setHTML(id, h) { var e = el(id); if (e) e.innerHTML = h; }
+
+  function esc(s) {
+    return String(s)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  // ── Weather icon map (OWM condition codes) ───────────────
+  function wxIcon(id) {
+    if (id >= 200 && id < 300) return '⛈';
+    if (id >= 300 && id < 400) return '🌦';
+    if (id >= 500 && id < 600) return '🌧';
+    if (id >= 600 && id < 700) return '❄';
+    if (id >= 700 && id < 800) return '🌫';
+    if (id === 800)             return '☀';
+    if (id === 801)             return '🌤';
+    if (id === 802)             return '⛅';
+    if (id === 803)             return '🌥';
+    if (id >= 804)              return '☁';
+    return '·';
+  }
+
+  var DAY_FULL  = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  var DAY_SHORT = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  var MON_LONG  = ['January','February','March','April','May','June',
+                   'July','August','September','October','November','December'];
+  var MON_SHORT = ['Jan','Feb','Mar','Apr','May','Jun',
+                   'Jul','Aug','Sep','Oct','Nov','Dec'];
+
+  // ── Clock ────────────────────────────────────────────────
+  function updateClock() {
+    var now = new Date();
+    setText('clock-hm',      pad(now.getHours()) + ':' + pad(now.getMinutes()));
+    setText('time-seconds',  pad(now.getSeconds()));
+    setText('date-display',
+      DAY_FULL[now.getDay()] + ', ' +
+      MON_LONG[now.getMonth()] + ' ' +
+      now.getDate() + ', ' +
+      now.getFullYear()
+    );
+  }
+
+  // ── XHR helper ───────────────────────────────────────────
+  function get(url, cb) {
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', url);
+    xhr.onreadystatechange = function () {
+      if (xhr.readyState !== 4) return;
+      if (xhr.status === 200) {
+        try { cb(null, JSON.parse(xhr.responseText)); }
+        catch (e) { cb(e); }
+      } else {
+        cb(new Error('HTTP ' + xhr.status));
+      }
+    };
+    xhr.send();
+  }
+
+  // ── Time formatters ──────────────────────────────────────
+  function fmtHourMin(d) {
+    var h = d.getHours(), m = d.getMinutes();
+    var ampm = h >= 12 ? 'pm' : 'am';
+    if (h === 0) h = 12; else if (h > 12) h -= 12;
+    return h + ':' + pad(m) + ' ' + ampm;
+  }
+
+  function fmtHourOnly(ts) {
+    var d = new Date(ts * 1000);
+    var h = d.getHours();
+    var ampm = h >= 12 ? 'pm' : 'am';
+    if (h === 0) h = 12; else if (h > 12) h -= 12;
+    return h + ampm;
+  }
+
+  function fmtSunTime(ts) {
+    var d = new Date(ts * 1000);
+    return fmtHourMin(d);
+  }
+
+  // ── Weather rendering ─────────────────────────────────────
+  function renderWeather(data) {
+    var cur   = data.current;
+    var cond  = cur.weather[0];
+    var day0  = data.daily[0];
+
+    setText('current-icon', wxIcon(cond.id));
+    setText('current-temp', Math.round(cur.temp) + '°');
+
+    var desc = cond.description;
+    setText('current-desc', desc.charAt(0).toUpperCase() + desc.slice(1) + '.');
+
+    setText('detail-hilo',    Math.round(day0.temp.max) + '° / ' + Math.round(day0.temp.min) + '°');
+    setText('detail-sunrise', '↑ ' + fmtSunTime(cur.sunrise));
+    setText('detail-sunset',  '↓ ' + fmtSunTime(cur.sunset));
+    setText('detail-humid',   '💧 ' + cur.humidity + '%');
+    setText('detail-uv',      'UV ' + Math.round(cur.uvi));
+
+    // Hourly: +3h, +6h, +9h slots
+    var hourlyHTML = '';
+    var slots = [data.hourly[3], data.hourly[6], data.hourly[9]];
+    for (var i = 0; i < slots.length; i++) {
+      var h = slots[i];
+      if (!h) continue;
+      hourlyHTML +=
+        '<div class="fc-row">' +
+          '<span class="fc-time">' + fmtHourOnly(h.dt) + '</span>' +
+          '<span class="fc-icon">' + wxIcon(h.weather[0].id) + '</span>' +
+          '<span class="fc-temp">' + Math.round(h.temp) + '°</span>' +
+          '<span class="fc-stat">' + Math.round(h.pop * 100) + '%</span>' +
+          '<span class="fc-stat dimmer">' + h.humidity + '%</span>' +
+        '</div>';
+    }
+    setHTML('hourly-list', hourlyHTML);
+
+    // Daily: days 1-7 (skip today at index 0)
+    var dailyHTML = '';
+    for (var j = 1; j <= 7; j++) {
+      var dy = data.daily[j];
+      if (!dy) continue;
+      var dDate = new Date(dy.dt * 1000);
+      dailyHTML +=
+        '<div class="fc-row">' +
+          '<span class="fc-day">' + DAY_SHORT[dDate.getDay()] + '</span>' +
+          '<span class="fc-icon">' + wxIcon(dy.weather[0].id) + '</span>' +
+          '<span class="fc-dtemp">' +
+            Math.round(dy.temp.max) + '°' +
+            '<span class="dimmer">/' + Math.round(dy.temp.min) + '°</span>' +
+          '</span>' +
+          '<span class="fc-stat">' + Math.round(dy.pop * 100) + '%</span>' +
+          '<span class="fc-wind">' + Math.round(dy.wind_speed) + '<span class="dimmer"> m/s</span></span>' +
+        '</div>';
+    }
+    setHTML('daily-list', dailyHTML);
+  }
+
+  // ── Calendar rendering ────────────────────────────────────
+  function fmtEventTime(ts, allDay) {
+    var now    = new Date();
+    var evDate = new Date(ts);
+    var nowMs  = now.getTime();
+    var diffMs = ts - nowMs;
+
+    if (diffMs > 0 && diffMs < 60 * 1000)       return 'Now';
+    if (diffMs > 0 && diffMs < 60 * 60 * 1000)  return 'In ' + Math.round(diffMs / 60000) + ' min';
+    if (diffMs > 0 && diffMs < 6 * 3600 * 1000) {
+      var hrs = Math.ceil(diffMs / 3600000);
+      return 'In ' + hrs + ' hr' + (hrs === 1 ? '' : 's');
+    }
+
+    var sameDay = evDate.getFullYear() === now.getFullYear() &&
+                  evDate.getMonth()    === now.getMonth()    &&
+                  evDate.getDate()     === now.getDate();
+    if (sameDay) return allDay ? 'Today' : 'Today at ' + fmtHourMin(evDate);
+
+    var tom = new Date(now);
+    tom.setDate(tom.getDate() + 1);
+    var isTom = evDate.getFullYear() === tom.getFullYear() &&
+                evDate.getMonth()    === tom.getMonth()    &&
+                evDate.getDate()     === tom.getDate();
+    if (isTom) return allDay ? 'Tomorrow' : 'Tomorrow at ' + fmtHourMin(evDate);
+
+    if (diffMs > 0 && diffMs < 7 * 86400 * 1000) {
+      var dayName = DAY_FULL[evDate.getDay()];
+      return allDay ? dayName : dayName + ' at ' + fmtHourMin(evDate);
+    }
+
+    var day = evDate.getDate();
+    var sfx = (day === 1 || day === 21 || day === 31) ? 'st' :
+              (day === 2 || day === 22)               ? 'nd' :
+              (day === 3 || day === 23)               ? 'rd' : 'th';
+    var dateStr = MON_SHORT[evDate.getMonth()] + ' ' + day + sfx;
+    return allDay ? dateStr : dateStr + ' at ' + fmtHourMin(evDate);
+  }
+
+  function renderCalendar(events) {
+    var nowMs = Date.now();
+    var now   = new Date();
+    var html  = '';
+
+    for (var i = 0; i < events.length; i++) {
+      var ev    = events[i];
+      var ts    = ev.dtstart;
+      var alDay = ev.allDay;
+
+      // Skip timed events that ended > 1 hour ago
+      if (!alDay && ts < nowMs - 3600 * 1000) continue;
+
+      // Skip all-day events from before today
+      if (alDay) {
+        var d = new Date(ts);
+        if (d.getFullYear() < now.getFullYear()) continue;
+        if (d.getFullYear() === now.getFullYear() && d.getMonth() < now.getMonth()) continue;
+        if (d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() &&
+            d.getDate() < now.getDate()) continue;
+      }
+
+      var diffMs  = ts - nowMs;
+      var isSoon  = diffMs > 0 && diffMs < 6 * 3600 * 1000;
+      var timeStr = fmtEventTime(ts, alDay);
+
+      html +=
+        '<div class="cal-event' + (isSoon ? ' soon' : '') + '">' +
+          '<span class="cal-name">' + esc(ev.summary) + '</span>' +
+          '<span class="cal-time">' + timeStr + '</span>' +
+        '</div>';
+    }
+
+    if (!html) html = '<div class="cal-empty">No upcoming events</div>';
+    setHTML('calendar-events', html);
+  }
+
+  // ── Fetch ─────────────────────────────────────────────────
+  function fetchWeather() {
+    get('/api/weather', function (err, data) {
+      if (err) { console.error('weather:', err.message); return; }
+      try { renderWeather(data); } catch (e) { console.error('render weather:', e); }
+    });
+  }
+
+  function fetchCalendar() {
+    get('/api/calendar', function (err, data) {
+      if (err) { console.error('calendar:', err.message); return; }
+      try { renderCalendar(data); } catch (e) { console.error('render calendar:', e); }
+    });
+  }
+
+  // ── Boot ──────────────────────────────────────────────────
+  updateClock();
+  setInterval(updateClock, 1000);
+
+  fetchWeather();
+  setInterval(fetchWeather, 15 * 60 * 1000);
+
+  fetchCalendar();
+  setInterval(fetchCalendar, 15 * 60 * 1000);
+
+}());
+</script>
+</body>
+</html>
