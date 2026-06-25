@@ -5,12 +5,8 @@ services:
     restart: unless-stopped
     ports:
       - "3456:3000"
-    environment:
-      - PORT=3000
-      - OWM_KEY=733c75d480f41bd7e6114ea15197c1fa
-      - LAT=25.033
-      - LON=121.5654
-      - CAL_URL=https://calendar.google.com/calendar/ical/998e9ce98f4561652eff3f0e219639e83f3864e9aa83bf14a12fe9f430c619b6%40group.calendar.google.com/private-e7703b84c1d27821bca2f376a69e44b8/basic.ics
+    env_file:
+      - .env
     networks:
       - Userbridge
 
