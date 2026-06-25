@@ -59,7 +59,7 @@
     .fc-stat {
       -webkit-flex: 1;
       flex: 1;
-      font-size: 18px;
+      font-size: 16px;
       color: rgba(255,255,255,0.6);
       text-align: right;
     }
@@ -156,12 +156,12 @@
     /* Hourly row */
     .fc-time {
       width: 42px;
-      font-size: 18px;
+      font-size: 16px;
       color: rgba(255,255,255,0.6);
     }
     .fc-temp {
       width: 44px;
-      font-size: 18px;
+      font-size: 16px;
       font-weight: 300;
     }
 
@@ -192,17 +192,17 @@
 
     .fc-day {
       width: 38px;
-      font-size: 18px;
+      font-size: 16px;
       color: rgba(255,255,255,0.6);
     }
     .fc-dtemp {
       width: 82px;
-      font-size: 18px;
+      font-size: 16px;
       font-weight: 300;
     }
     .fc-wind {
       width: 50px;
-      font-size: 18px;
+      font-size: 16px;
       color: rgba(255,255,255,0.6);
       text-align: right;
     }
@@ -305,7 +305,7 @@
       border-bottom: 1px solid rgba(255,255,255,0.06);
     }
     .cal-name {
-      font-size: 15px;
+      font-size: 16px;
       font-weight: 300;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -314,7 +314,7 @@
       padding-right: 8px;
     }
     .cal-time {
-      font-size: 13px;
+      font-size: 16px;
       color: rgba(255,255,255,0.5);
       -webkit-flex-shrink: 0;
       flex-shrink: 0;
@@ -609,6 +609,7 @@
     var nowMs = Date.now();
     var now   = new Date();
     var html  = '';
+    var shown = 0;
 
     for (var i = 0; i < events.length; i++) {
       var ev    = events[i];
@@ -636,6 +637,8 @@
           '<span class="cal-name">' + esc(ev.summary) + '</span>' +
           '<span class="cal-time">' + timeStr + '</span>' +
         '</div>';
+      shown++;
+      if (shown >= 8) break;
     }
 
     if (!html) html = '<div class="cal-empty">No upcoming events</div>';

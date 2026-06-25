@@ -45,6 +45,19 @@ function fetchUrl(urlStr, cb, hops) {
   req.setTimeout(12000, function () { req.destroy(new Error('timeout')); });
 }
 
+// ── Emoji stripper (iOS 9 / Safari 9 can't render many modern emoji) ─────────
+
+function stripEmoji(str) {
+  // iOS 9 can't render astral-plane emoji (U+1F000+) — they show as boxes.
+  // Surrogate pairs cover all emoji above U+FFFF (🌿 🦢 🎉 etc.).
+  return str
+    .replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, '')
+    .replace(/️/g, '')
+    .replace(/‍/g, '')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+}
+
 // ── ICS parser ────────────────────────────────────────────────────────────────
 
 function unfoldICS(text) {
@@ -146,7 +159,7 @@ function parseICS(text) {
       var p2 = parseICSDate(value, tzOffset);
       cur.dtend = p2.date;
     } else if (keyname === 'SUMMARY') {
-      cur.summary = value.replace(/\\n/g, ' ').replace(/\\,/g, ',').replace(/\\\\/g, '\\').trim();
+      cur.summary = stripEmoji(value.replace(/\\n/g, ' ').replace(/\\,/g, ',').replace(/\\\\/g, '\\').trim());
     } else if (keyname === 'RRULE') {
       cur.rrule = value;
     } else if (keyname === 'EXDATE') {
