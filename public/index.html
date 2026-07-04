@@ -75,14 +75,14 @@
       flex-direction: row;
       -webkit-flex-shrink: 0;
       flex-shrink: 0;
-      height: 385px;
+      height: 310px;
       border-bottom: 1px solid rgba(255,255,255,0.1);
     }
 
     /* ── Left: current + hourly ───────────────── */
     #wx-left {
       width: 50%;
-      padding: 14px 14px 10px 16px;
+      padding: 10px 14px 8px 16px;
       border-right: 1px solid rgba(255,255,255,0.1);
       display: -webkit-flex;
       display: flex;
@@ -95,8 +95,8 @@
       display: flex;
       -webkit-align-items: center;
       align-items: center;
-      margin-top: 8px;
-      margin-bottom: 4px;
+      margin-top: 4px;
+      margin-bottom: 2px;
     }
     #current-icon {
       font-size: 58px;
@@ -109,11 +109,20 @@
       line-height: 1;
       letter-spacing: -1px;
     }
+    #current-feels {
+      font-size: 16px;
+      font-weight: 300;
+      color: rgba(255,255,255,0.5);
+      margin-left: 10px;
+      -webkit-align-self: flex-end;
+      align-self: flex-end;
+      padding-bottom: 8px;
+    }
 
     #current-desc {
       font-size: 16px;
       color: rgba(255,255,255,0.68);
-      margin-bottom: 8px;
+      margin-bottom: 4px;
     }
 
     .detail-line {
@@ -123,7 +132,7 @@
       flex-direction: row;
       font-size: 16px;
       color: rgba(255,255,255,0.62);
-      margin-bottom: 3px;
+      margin-bottom: 2px;
     }
     .detail-line span {
       margin-right: 12px;
@@ -132,7 +141,7 @@
     #hourly-divider {
       border: none;
       border-top: 1px solid rgba(255,255,255,0.1);
-      margin: 8px 0 6px 0;
+      margin: 6px 0 4px 0;
     }
 
     /* Hourly column headers */
@@ -176,14 +185,14 @@
       justify-content: space-around;
     }
     #hourly-list .fc-row {
-      padding: 3px 0;
+      padding: 2px 0;
       border-bottom: 1px solid rgba(255,255,255,0.05);
     }
 
     /* ── Right: daily forecast ─────────────────── */
     #wx-right {
       width: 50%;
-      padding: 14px 16px 10px 14px;
+      padding: 10px 16px 8px 14px;
       display: -webkit-flex;
       display: flex;
       -webkit-flex-direction: column;
@@ -216,10 +225,10 @@
       flex-direction: column;
       -webkit-justify-content: space-around;
       justify-content: space-around;
-      margin-top: 6px;
+      margin-top: 4px;
     }
     #daily-list .fc-row {
-      padding: 4px 0;
+      padding: 2px 0;
       border-bottom: 1px solid rgba(255,255,255,0.05);
     }
 
@@ -284,11 +293,26 @@
       flex-direction: column;
     }
 
-    #cal-header {
+    .cal-block {
+      -webkit-flex: 1;
+      flex: 1;
+      overflow: hidden;
+      display: -webkit-flex;
+      display: flex;
+      -webkit-flex-direction: column;
+      flex-direction: column;
+    }
+    .cal-block + .cal-block {
+      border-top: 1px solid rgba(255,255,255,0.1);
+      margin-top: 6px;
+      padding-top: 10px;
+    }
+
+    .cal-header {
       margin-bottom: 6px;
     }
 
-    #calendar-events {
+    .cal-events {
       -webkit-flex: 1;
       flex: 1;
       overflow: hidden;
@@ -350,6 +374,7 @@
       <div id="current-main">
         <span id="current-icon">☁</span>
         <span id="current-temp">--°</span>
+        <span id="current-feels">feels like --°</span>
       </div>
 
       <div id="current-desc" class="loading">Loading…</div>
@@ -358,10 +383,10 @@
         <span id="detail-hilo">--° / --°</span>
         <span id="detail-sunrise">↑ --:--</span>
         <span id="detail-sunset">↓ --:--</span>
+        <span id="detail-rain">🌧 --%</span>
       </div>
       <div class="detail-line">
         <span id="detail-humid">💧 --%</span>
-        <span id="detail-uv">UV --</span>
       </div>
 
       <hr id="hourly-divider">
@@ -409,11 +434,21 @@
 
   <!-- ── CALENDAR ──────────────────────────────────────────── -->
   <div id="calendar-section">
-    <div id="cal-header">
-      <span class="lbl">Bob's Calendar</span>
+    <div class="cal-block">
+      <div class="cal-header">
+        <span class="lbl">Bob's Calendar</span>
+      </div>
+      <div class="cal-events" id="calendar-events">
+        <div class="loading">Loading…</div>
+      </div>
     </div>
-    <div id="calendar-events">
-      <div class="loading">Loading…</div>
+    <div class="cal-block">
+      <div class="cal-header">
+        <span class="lbl">Decades to Come</span>
+      </div>
+      <div class="cal-events" id="calendar2-events">
+        <div class="loading">Loading…</div>
+      </div>
     </div>
   </div>
 
@@ -518,6 +553,7 @@
 
     setText('current-icon', wxIcon(cond.id));
     setText('current-temp', Math.round(cur.temp) + '°');
+    setText('current-feels', 'feels like ' + Math.round(cur.feels_like) + '°');
 
     var desc = cond.description;
     setText('current-desc', desc.charAt(0).toUpperCase() + desc.slice(1) + '.');
@@ -525,8 +561,8 @@
     setText('detail-hilo',    Math.round(day0.temp.max) + '° / ' + Math.round(day0.temp.min) + '°');
     setText('detail-sunrise', '↑ ' + fmtSunTime(cur.sunrise));
     setText('detail-sunset',  '↓ ' + fmtSunTime(cur.sunset));
+    setText('detail-rain',    '🌧 ' + Math.round(day0.pop * 100) + '%');
     setText('detail-humid',   '💧 ' + cur.humidity + '%');
-    setText('detail-uv',      'UV ' + Math.round(cur.uvi));
 
     // Hourly: +3h, +6h, +9h slots
     var hourlyHTML = '';
@@ -605,7 +641,7 @@
     return allDay ? dateStr : dateStr + ' at ' + fmtHourMin(evDate);
   }
 
-  function renderCalendar(events) {
+  function renderCalendar(events, containerId, maxEvents) {
     var nowMs = Date.now();
     var now   = new Date();
     var html  = '';
@@ -638,11 +674,11 @@
           '<span class="cal-time">' + timeStr + '</span>' +
         '</div>';
       shown++;
-      if (shown >= 8) break;
+      if (shown >= maxEvents) break;
     }
 
     if (!html) html = '<div class="cal-empty">No upcoming events</div>';
-    setHTML('calendar-events', html);
+    setHTML(containerId, html);
   }
 
   // ── Fetch ─────────────────────────────────────────────────
@@ -656,7 +692,11 @@
   function fetchCalendar() {
     get('/api/calendar', function (err, data) {
       if (err) { console.error('calendar:', err.message); return; }
-      try { renderCalendar(data); } catch (e) { console.error('render calendar:', e); }
+      try { renderCalendar(data, 'calendar-events', 5); } catch (e) { console.error('render calendar:', e); }
+    });
+    get('/api/calendar2', function (err, data) {
+      if (err) { console.error('calendar2:', err.message); return; }
+      try { renderCalendar(data, 'calendar2-events', 5); } catch (e) { console.error('render calendar2:', e); }
     });
   }
 

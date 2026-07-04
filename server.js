@@ -11,10 +11,12 @@ var OWM_KEY  = process.env.OWM_KEY  || '733c75d480f41bd7e6114ea15197c1fa';
 var LAT      = process.env.LAT      || '25.033';
 var LON      = process.env.LON      || '121.5654';
 var CAL_URL  = process.env.CAL_URL  || 'https://calendar.google.com/calendar/ical/998e9ce98f4561652eff3f0e219639e83f3864e9aa83bf14a12fe9f430c619b6%40group.calendar.google.com/private-e7703b84c1d27821bca2f376a69e44b8/basic.ics';
+var CAL_URL2 = process.env.CAL_URL2 || 'https://calendar.google.com/calendar/ical/7e6782b2f813aae415a8a2a49101ff55952b958e373f68872628a418c7ca9bea%40group.calendar.google.com/private-f35686372e097500beae2a39bc40cd8c/basic.ics';
 var CACHE_MS = 15 * 60 * 1000;
 
-var weatherCache  = { data: null, ts: 0 };
-var calendarCache = { data: null, ts: 0 };
+var weatherCache   = { data: null, ts: 0 };
+var calendarCache  = { data: null, ts: 0 };
+var calendarCache2 = { data: null, ts: 0 };
 
 // ── HTTP/S fetcher with redirect following ────────────────────────────────────
 
@@ -296,16 +298,16 @@ function serveWeather(res) {
   });
 }
 
-function serveCalendar(res) {
+function serveCalendar(res, calUrl, cache) {
   var now = Date.now();
-  if (calendarCache.data && now - calendarCache.ts < CACHE_MS) {
-    sendJSON(res, calendarCache.data);
+  if (cache.data && now - cache.ts < CACHE_MS) {
+    sendJSON(res, cache.data);
     return;
   }
 
-  fetchUrl(CAL_URL, function (err, body) {
+  fetchUrl(calUrl, function (err, body) {
     if (err) {
-      if (calendarCache.data) { sendJSON(res, calendarCache.data); return; }
+      if (cache.data) { sendJSON(res, cache.data); return; }
       sendError(res, 502, 'Calendar unavailable: ' + err.message);
       return;
     }
@@ -321,7 +323,8 @@ function serveCalendar(res) {
         return { summary: ev.summary, dtstart: ev.dtstart.getTime(), allDay: ev.allDay };
       });
 
-      calendarCache = { data: result, ts: Date.now() };
+      cache.data = result;
+      cache.ts   = Date.now();
       sendJSON(res, result);
     } catch (e) {
       console.error('Calendar parse error:', e.message);
@@ -344,7 +347,9 @@ var server = http.createServer(function (req, res) {
   if (pathname === '/api/weather') {
     serveWeather(res);
   } else if (pathname === '/api/calendar') {
-    serveCalendar(res);
+    serveCalendar(res, CAL_URL, calendarCache);
+  } else if (pathname === '/api/calendar2') {
+    serveCalendar(res, CAL_URL2, calendarCache2);
   } else {
     // Static file
     if (pathname === '/') pathname = '/index.html';
