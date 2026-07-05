@@ -62,6 +62,7 @@
       font-size: 16px;
       color: rgba(255,255,255,0.6);
       text-align: right;
+      white-space: nowrap;
     }
     .dimmer { color: rgba(255,255,255,0.45); }
 
@@ -179,14 +180,30 @@
       flex: 1;
       display: -webkit-flex;
       display: flex;
+      -webkit-flex-direction: row;
+      flex-direction: row;
+    }
+    .hourly-col {
+      -webkit-flex: 1;
+      flex: 1;
+      display: -webkit-flex;
+      display: flex;
       -webkit-flex-direction: column;
       flex-direction: column;
       -webkit-justify-content: space-around;
       justify-content: space-around;
     }
-    #hourly-list .fc-row {
+    .hourly-col + .hourly-col {
+      margin-left: 14px;
+      padding-left: 14px;
+      border-left: 1px solid rgba(255,255,255,0.07);
+    }
+    .hourly-col .fc-row {
       padding: 2px 0;
       border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .hourly-col .fc-stat {
+      font-size: 13px;
     }
 
     /* ── Right: daily forecast ─────────────────── */
@@ -209,13 +226,6 @@
       font-size: 16px;
       font-weight: 300;
     }
-    .fc-wind {
-      width: 50px;
-      font-size: 16px;
-      color: rgba(255,255,255,0.6);
-      text-align: right;
-    }
-
     #daily-list {
       -webkit-flex: 1;
       flex: 1;
@@ -385,23 +395,21 @@
         <span id="detail-sunset">↓ --:--</span>
         <span id="detail-rain">🌧 --%</span>
       </div>
-      <div class="detail-line">
-        <span id="detail-humid">💧 --%</span>
-      </div>
 
       <hr id="hourly-divider">
 
       <!-- Hourly header -->
       <div class="fc-hdr">
-        <span class="hdr-lbl" style="width:42px">Hourly</span>
-        <span class="fc-icon"></span>
-        <span class="fc-temp"></span>
-        <span class="fc-stat" style="font-size:13px">🌧</span>
-        <span class="fc-stat" style="font-size:13px">💧</span>
+        <span class="hdr-lbl">Hourly</span>
       </div>
 
       <div id="hourly-list">
-        <div class="loading" style="padding:8px 0">Loading…</div>
+        <div class="hourly-col" id="hourly-col-1">
+          <div class="loading" style="padding:8px 0">Loading…</div>
+        </div>
+        <div class="hourly-col" id="hourly-col-2">
+          <div class="loading" style="padding:8px 0">Loading…</div>
+        </div>
       </div>
     </div>
 
@@ -415,7 +423,6 @@
         <span class="fc-icon"></span>
         <span class="fc-dtemp" style="font-size:10px;color:rgba(255,255,255,0.35)">Hi / Lo</span>
         <span class="fc-stat" style="font-size:13px">🌧</span>
-        <span class="fc-wind" style="font-size:13px;text-align:right">💨</span>
       </div>
 
       <div id="daily-list">
@@ -562,24 +569,25 @@
     setText('detail-sunrise', '↑ ' + fmtSunTime(cur.sunrise));
     setText('detail-sunset',  '↓ ' + fmtSunTime(cur.sunset));
     setText('detail-rain',    '🌧 ' + Math.round(day0.pop * 100) + '%');
-    setText('detail-humid',   '💧 ' + cur.humidity + '%');
 
-    // Hourly: +3h, +6h, +9h slots
-    var hourlyHTML = '';
-    var slots = [data.hourly[3], data.hourly[6], data.hourly[9]];
-    for (var i = 0; i < slots.length; i++) {
-      var h = slots[i];
-      if (!h) continue;
-      hourlyHTML +=
-        '<div class="fc-row">' +
-          '<span class="fc-time">' + fmtHourOnly(h.dt) + '</span>' +
-          '<span class="fc-icon">' + wxIcon(h.weather[0].id) + '</span>' +
-          '<span class="fc-temp">' + Math.round(h.temp) + '°</span>' +
-          '<span class="fc-stat">' + Math.round(h.pop * 100) + '%</span>' +
-          '<span class="fc-stat dimmer">' + h.humidity + '%</span>' +
-        '</div>';
+    // Hourly: two columns, every 2h — left covers +2h..+6h, right covers +8h..+12h
+    function hourlyRows(slots) {
+      var html = '';
+      for (var i = 0; i < slots.length; i++) {
+        var h = slots[i];
+        if (!h) continue;
+        html +=
+          '<div class="fc-row">' +
+            '<span class="fc-time">' + fmtHourOnly(h.dt) + '</span>' +
+            '<span class="fc-icon">' + wxIcon(h.weather[0].id) + '</span>' +
+            '<span class="fc-temp">' + Math.round(h.temp) + '°</span>' +
+            '<span class="fc-stat">🌧 ' + Math.round(h.pop * 100) + '%</span>' +
+          '</div>';
+      }
+      return html;
     }
-    setHTML('hourly-list', hourlyHTML);
+    setHTML('hourly-col-1', hourlyRows([data.hourly[2], data.hourly[4], data.hourly[6]]));
+    setHTML('hourly-col-2', hourlyRows([data.hourly[8], data.hourly[10], data.hourly[12]]));
 
     // Daily: days 1-7 (skip today at index 0)
     var dailyHTML = '';
@@ -596,7 +604,6 @@
             '<span class="dimmer">/' + Math.round(dy.temp.min) + '°</span>' +
           '</span>' +
           '<span class="fc-stat">' + Math.round(dy.pop * 100) + '%</span>' +
-          '<span class="fc-wind">' + Math.round(dy.wind_speed) + '<span class="dimmer"> m/s</span></span>' +
         '</div>';
     }
     setHTML('daily-list', dailyHTML);
