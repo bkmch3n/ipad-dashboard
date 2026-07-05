@@ -221,16 +221,26 @@
       font-size: 16px;
       color: rgba(255,255,255,0.6);
     }
+    .fc-day-group {
+      display: -webkit-flex;
+      display: flex;
+      -webkit-align-items: center;
+      align-items: center;
+    }
     .fc-dtemp {
       width: 82px;
       font-size: 16px;
       font-weight: 300;
     }
+    #wx-right .fc-row,
+    #wx-right .fc-hdr {
+      -webkit-justify-content: space-between;
+      justify-content: space-between;
+    }
     #wx-right .fc-stat {
       -webkit-flex: 0 0 auto;
       flex: 0 0 auto;
-      width: 50px;
-      margin-left: 10px;
+      width: auto;
     }
     #daily-list {
       -webkit-flex: 1;
@@ -425,8 +435,10 @@
 
       <!-- Daily column header -->
       <div class="fc-hdr" style="margin-top:6px">
-        <span class="fc-day"></span>
-        <span class="fc-icon"></span>
+        <span class="fc-day-group">
+          <span class="fc-day"></span>
+          <span class="fc-icon"></span>
+        </span>
         <span class="fc-dtemp" style="font-size:10px;color:rgba(255,255,255,0.35)">Hi / Lo</span>
         <span class="fc-stat" style="font-size:13px">🌧</span>
       </div>
@@ -603,8 +615,10 @@
       var dDate = new Date(dy.dt * 1000);
       dailyHTML +=
         '<div class="fc-row">' +
-          '<span class="fc-day">' + DAY_SHORT[dDate.getDay()] + '</span>' +
-          '<span class="fc-icon">' + wxIcon(dy.weather[0].id) + '</span>' +
+          '<span class="fc-day-group">' +
+            '<span class="fc-day">' + DAY_SHORT[dDate.getDay()] + '</span>' +
+            '<span class="fc-icon">' + wxIcon(dy.weather[0].id) + '</span>' +
+          '</span>' +
           '<span class="fc-dtemp">' +
             Math.round(dy.temp.max) + '°' +
             '<span class="dimmer">/' + Math.round(dy.temp.min) + '°</span>' +
