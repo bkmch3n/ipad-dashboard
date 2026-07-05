@@ -65,6 +65,7 @@
       white-space: nowrap;
     }
     .dimmer { color: rgba(255,255,255,0.45); }
+    .emoji-sm { font-size: 0.72em; vertical-align: 1px; }
 
     /* ─────────────────────────────────────────────────────────
        TOP ROW — weather
@@ -82,7 +83,7 @@
 
     /* ── Left: current + hourly ───────────────── */
     #wx-left {
-      width: 50%;
+      width: 57%;
       padding: 10px 14px 8px 16px;
       border-right: 1px solid rgba(255,255,255,0.1);
       display: -webkit-flex;
@@ -131,6 +132,8 @@
       display: flex;
       -webkit-flex-direction: row;
       flex-direction: row;
+      -webkit-align-items: center;
+      align-items: center;
       font-size: 16px;
       color: rgba(255,255,255,0.62);
       margin-bottom: 2px;
@@ -202,13 +205,10 @@
       padding: 2px 0;
       border-bottom: 1px solid rgba(255,255,255,0.05);
     }
-    .hourly-col .fc-stat {
-      font-size: 13px;
-    }
 
     /* ── Right: daily forecast ─────────────────── */
     #wx-right {
-      width: 50%;
+      width: 43%;
       padding: 10px 16px 8px 14px;
       display: -webkit-flex;
       display: flex;
@@ -225,6 +225,12 @@
       width: 82px;
       font-size: 16px;
       font-weight: 300;
+    }
+    #wx-right .fc-stat {
+      -webkit-flex: 0 0 auto;
+      flex: 0 0 auto;
+      width: 50px;
+      margin-left: 10px;
     }
     #daily-list {
       -webkit-flex: 1;
@@ -568,7 +574,7 @@
     setText('detail-hilo',    Math.round(day0.temp.max) + '° / ' + Math.round(day0.temp.min) + '°');
     setText('detail-sunrise', '↑ ' + fmtSunTime(cur.sunrise));
     setText('detail-sunset',  '↓ ' + fmtSunTime(cur.sunset));
-    setText('detail-rain',    '🌧 ' + Math.round(day0.pop * 100) + '%');
+    setHTML('detail-rain',    '<span class="emoji-sm">🌧</span> ' + Math.round(day0.pop * 100) + '%');
 
     // Hourly: two columns, every 2h — left covers +2h..+6h, right covers +8h..+12h
     function hourlyRows(slots) {
@@ -581,7 +587,7 @@
             '<span class="fc-time">' + fmtHourOnly(h.dt) + '</span>' +
             '<span class="fc-icon">' + wxIcon(h.weather[0].id) + '</span>' +
             '<span class="fc-temp">' + Math.round(h.temp) + '°</span>' +
-            '<span class="fc-stat">🌧 ' + Math.round(h.pop * 100) + '%</span>' +
+            '<span class="fc-stat"><span class="emoji-sm">🌧</span> ' + Math.round(h.pop * 100) + '%</span>' +
           '</div>';
       }
       return html;
