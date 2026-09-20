@@ -337,6 +337,21 @@
     .cal-header {
       margin-bottom: 6px;
     }
+    .cal-status {
+      font-size: 11px;
+      color: rgba(255,255,255,0.38);
+      margin-top: 2px;
+      letter-spacing: 0.1px;
+    }
+    .cal-footnote {
+      flex-shrink: 0;
+      border-top: 1px solid rgba(255,255,255,0.1);
+      padding-top: 6px;
+      margin-top: 5px;
+      font-size: 11px;
+      color: rgba(255,255,255,0.4);
+      text-align: right;
+    }
 
     .cal-events {
       -webkit-flex: 1;
@@ -461,19 +476,13 @@
   <div id="calendar-section">
     <div class="cal-block">
       <div class="cal-header">
-        <span class="lbl">Bob's Calendar</span>
+        <span class="lbl">Upcoming events</span>
+        <div class="cal-status">Bob's personal + Decades to Come shared calendar · nearest 10</div>
       </div>
       <div class="cal-events" id="calendar-events">
         <div class="loading">Loading…</div>
       </div>
-    </div>
-    <div class="cal-block">
-      <div class="cal-header">
-        <span class="lbl">Decades to Come</span>
-      </div>
-      <div class="cal-events" id="calendar2-events">
-        <div class="loading">Loading…</div>
-      </div>
+      <div class="cal-footnote" id="calendar-status">Bob's calendar … · Decades to Come …</div>
     </div>
   </div>
 
@@ -716,14 +725,23 @@
     });
   }
 
+  function renderCalendarStatus(status) {
+    var bob = status && status.bob ? '✅' : '❌';
+    var decades = status && status.decades ? '✅' : '❌';
+    setText('calendar-status', "Bob's calendar " + bob + ' · Decades to Come ' + decades);
+  }
+
   function fetchCalendar() {
-    get('/api/calendar', function (err, data) {
-      if (err) { console.error('calendar:', err.message); return; }
-      try { renderCalendar(data, 'calendar-events', 5); } catch (e) { console.error('render calendar:', e); }
-    });
-    get('/api/calendar2', function (err, data) {
-      if (err) { console.error('calendar2:', err.message); return; }
-      try { renderCalendar(data, 'calendar2-events', 5); } catch (e) { console.error('render calendar2:', e); }
+    get('/api/calendars', function (err, data) {
+      if (err) {
+        console.error('calendars:', err.message);
+        renderCalendarStatus({ bob: false, decades: false });
+        return;
+      }
+      try {
+        renderCalendar(data.events || [], 'calendar-events', 10);
+        renderCalendarStatus(data.status || {});
+      } catch (e) { console.error('render calendars:', e); }
     });
   }
 

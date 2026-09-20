@@ -27,6 +27,7 @@ var CACHE_MS = 15 * 60 * 1000;
 var weatherCache   = { data: null, ts: 0 };
 var calendarCache  = { data: null, ts: 0 };
 var calendarCache2 = { data: null, ts: 0 };
+var combinedCalendarCache = { data: null, ts: 0 };
 var oauthToken     = { accessToken: null, expiresAt: 0 };
 
 // ── HTTP/S fetcher with redirect following ────────────────────────────────────
@@ -467,6 +468,91 @@ function serveCalendar2(res, cache) {
   });
 }
 
+// Combined dashboard feed: nearest ten events across Bob's personal calendar
+// and the flamingo-filtered shared calendar. Each source is isolated so one
+// unavailable feed does not hide the other feed.
+function serveCombinedCalendars(res) {
+  var now = Date.now();
+  if (combinedCalendarCache.data && now - combinedCalendarCache.ts < CACHE_MS) {
+    sendJSON(res, combinedCalendarCache.data);
+    return;
+  }
+
+  var from = new Date(Date.now() - 86400 * 1000);
+  var to   = new Date(Date.now() + 90 * 86400 * 1000);
+  var pending = 2;
+  var sources = { bob: { reachable: false, events: [] }, decades: { reachable: false, events: [] } };
+
+  function finishOne() {
+    pending--;
+    if (pending !== 0) return;
+    var merged = sources.bob.events.concat(sources.decades.events).sort(function (a, b) {
+      return a.dtstart - b.dtstart;
+    }).slice(0, 10);
+    var result = {
+      events: merged,
+      status: { bob: sources.bob.reachable, decades: sources.decades.reachable }
+    };
+    combinedCalendarCache.data = result;
+    combinedCalendarCache.ts = Date.now();
+    sendJSON(res, result);
+  }
+
+  fetchUrl(CAL_URL, function (err, body) {
+    if (!err) {
+      try {
+        var rawEvents = parseICS(body);
+        sources.bob.events = expandEvents(rawEvents, from, to).map(function (ev) {
+          return { summary: ev.summary, dtstart: ev.dtstart.getTime(), allDay: ev.allDay, source: 'bob' };
+        });
+        sources.bob.reachable = true;
+      } catch (e) { console.error('Combined Bob calendar parse error:', e.message); }
+    } else {
+      console.error('Combined Bob calendar unavailable:', err.message);
+    }
+    finishOne();
+  });
+
+  if (!GOOGLE_OAUTH_CLIENT_ID || !GOOGLE_OAUTH_CLIENT_SECRET || !GOOGLE_OAUTH_REFRESH_TOKEN) {
+    console.error('Combined decades calendar unavailable: OAuth not configured');
+    finishOne();
+    return;
+  }
+
+  getAccessToken(function (tokErr, accessToken) {
+    if (tokErr) {
+      console.error('Combined decades calendar unavailable:', tokErr.message);
+      finishOne();
+      return;
+    }
+    var timeMin = new Date(Date.now() - 86400 * 1000).toISOString();
+    var timeMax = new Date(Date.now() + 90 * 86400 * 1000).toISOString();
+    var apiUrl = 'https://www.googleapis.com/calendar/v3/calendars/' +
+      encodeURIComponent(CAL2_ID) + '/events' +
+      '?timeMin=' + encodeURIComponent(timeMin) +
+      '&timeMax=' + encodeURIComponent(timeMax) +
+      '&singleEvents=true&orderBy=startTime&maxResults=50';
+    fetchUrl(apiUrl, function (err, body) {
+      if (!err) {
+        try {
+          var parsed = JSON.parse(body);
+          if (parsed.error) throw new Error(parsed.error.message || 'Google API error');
+          sources.decades.events = (parsed.items || []).filter(function (ev) {
+            return ev.status !== 'cancelled' && ev.colorId === CAL2_COLOR_ID;
+          }).map(function (ev) {
+            var start = parseAPIStart(ev.start);
+            return { summary: stripEmoji((ev.summary || '').trim()), dtstart: start.ts, allDay: start.allDay, source: 'decades' };
+          });
+          sources.decades.reachable = true;
+        } catch (e) { console.error('Combined decades calendar parse error:', e.message); }
+      } else {
+        console.error('Combined decades calendar unavailable:', err.message);
+      }
+      finishOne();
+    }, 0, { 'Authorization': 'Bearer ' + accessToken });
+  });
+}
+
 var MIME = {
   '.html': 'text/html; charset=utf-8',
   '.css':  'text/css',
@@ -484,6 +570,8 @@ var server = http.createServer(function (req, res) {
     serveCalendar(res, CAL_URL, calendarCache);
   } else if (pathname === '/api/calendar2') {
     serveCalendar2(res, calendarCache2);
+  } else if (pathname === '/api/calendars') {
+    serveCombinedCalendars(res);
   } else {
     // Static file
     if (pathname === '/') pathname = '/index.html';
