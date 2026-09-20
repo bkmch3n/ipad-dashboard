@@ -306,6 +306,29 @@
     }
 
     /* ─────────────────────────────────────────────────────────
+       WORK STATUS
+    ───────────────────────────────────────────────────────── */
+    #work-section {
+      -webkit-flex-shrink: 0;
+      flex-shrink: 0;
+      padding: 7px 16px 8px 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    #work-label {
+      font-size: 11px;
+      color: rgba(255,255,255,0.42);
+      letter-spacing: 0.5px;
+      margin-bottom: 3px;
+    }
+    #work-status {
+      font-size: 13px;
+      line-height: 1.35;
+      color: rgba(255,255,255,0.72);
+      white-space: pre-line;
+      overflow: hidden;
+    }
+
+    /* ─────────────────────────────────────────────────────────
        CALENDAR SECTION
     ───────────────────────────────────────────────────────── */
     #calendar-section {
@@ -470,6 +493,12 @@
     <div id="time-wrapper">
       <span id="clock-hm">--:--</span><span id="time-seconds">--</span>
     </div>
+  </div>
+
+  <!-- ── WORK STATUS ───────────────────────────────────────── -->
+  <div id="work-section">
+    <div id="work-label">Who's working today</div>
+    <div id="work-status">Loading…</div>
   </div>
 
   <!-- ── CALENDAR ──────────────────────────────────────────── -->
@@ -725,6 +754,17 @@
     });
   }
 
+  function fetchWorkStatus() {
+    get('/api/work-status', function (err, data) {
+      if (err) {
+        setText('work-status', 'Work status unavailable');
+        console.error('work status:', err.message);
+        return;
+      }
+      setText('work-status', data.text || 'No work status for today');
+    });
+  }
+
   function renderCalendarStatus(status) {
     var bob = status && status.bob ? '✅' : '❌';
     var decades = status && status.decades ? '✅' : '❌';
@@ -751,6 +791,9 @@
 
   fetchWeather();
   setInterval(fetchWeather, 15 * 60 * 1000);
+
+  fetchWorkStatus();
+  setInterval(fetchWorkStatus, 5 * 60 * 1000);
 
   fetchCalendar();
   setInterval(fetchCalendar, 15 * 60 * 1000);

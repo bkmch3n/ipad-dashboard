@@ -14,6 +14,7 @@ var LON      = process.env.LON      || '121.5654';
 var CAL_URL  = process.env.CAL_URL  || 'https://calendar.google.com/calendar/ical/998e9ce98f4561652eff3f0e219639e83f3864e9aa83bf14a12fe9f430c619b6%40group.calendar.google.com/private-e7703b84c1d27821bca2f376a69e44b8/basic.ics';
 var CAL2_ID       = process.env.CAL2_ID || '7e6782b2f813aae415a8a2a49101ff55952b958e373f68872628a418c7ca9bea@group.calendar.google.com';
 var CAL2_COLOR_ID = '4'; // Flamingo
+var WORK_URL = 'https://docs.google.com/spreadsheets/d/1SEskEFXEnnA0PfnfKpY0rImpjgVGaDHUG4XLlJjDT94/gviz/tq?tqx=out:csv&sheet=TODAY&range=A1';
 
 // calendar2 reads via OAuth (not an API key) because the user is a guest on that
 // calendar, not the owner — only OAuth-as-the-guest can read it without the owner
@@ -23,11 +24,13 @@ var GOOGLE_OAUTH_CLIENT_SECRET = process.env.GOOGLE_OAUTH_CLIENT_SECRET || '';
 var GOOGLE_OAUTH_REFRESH_TOKEN = process.env.GOOGLE_OAUTH_REFRESH_TOKEN || '';
 
 var CACHE_MS = 15 * 60 * 1000;
+var WORK_CACHE_MS = 5 * 60 * 1000;
 
 var weatherCache   = { data: null, ts: 0 };
 var calendarCache  = { data: null, ts: 0 };
 var calendarCache2 = { data: null, ts: 0 };
 var combinedCalendarCache = { data: null, ts: 0 };
+var workCache      = { data: null, ts: 0 };
 var oauthToken     = { accessToken: null, expiresAt: 0 };
 
 // ── HTTP/S fetcher with redirect following ────────────────────────────────────
@@ -455,6 +458,31 @@ function serveCalendar2(res, cache) {
   });
 }
 
+function serveWorkStatus(res) {
+  var now = Date.now();
+  if (workCache.data && now - workCache.ts < WORK_CACHE_MS) {
+    sendJSON(res, workCache.data);
+    return;
+  }
+  fetchUrl(WORK_URL, function (err, body) {
+    if (err) {
+      if (workCache.data) { sendJSON(res, workCache.data); return; }
+      sendError(res, 502, 'Work status unavailable: ' + err.message);
+      return;
+    }
+    // A1 is a single CSV cell containing embedded newlines. Google wraps it
+    // in quotes; unwrap one outer pair while preserving the line breaks.
+    var text = (body || '').trim();
+    if (text.charAt(0) === '"' && text.charAt(text.length - 1) === '"') {
+      text = text.slice(1, -1).replace(/""/g, '"');
+    }
+    var result = { text: text, updatedAt: Date.now() };
+    workCache.data = result;
+    workCache.ts = Date.now();
+    sendJSON(res, result);
+  });
+}
+
 // iPad 2-era Safari cannot render many astral-plane emoji. Keep emoji for
 // modern clients, but provide a text-safe response to that legacy user-agent.
 function isLegacyIPadSafari(req) {
@@ -584,6 +612,8 @@ var server = http.createServer(function (req, res) {
     serveCalendar2(res, calendarCache2);
   } else if (pathname === '/api/calendars') {
     serveCombinedCalendars(req, res);
+  } else if (pathname === '/api/work-status') {
+    serveWorkStatus(res);
   } else {
     // Static file
     if (pathname === '/') pathname = '/index.html';
