@@ -455,13 +455,38 @@ function serveCalendar2(res, cache) {
   });
 }
 
+// iPad 2-era Safari cannot render many astral-plane emoji. Keep emoji for
+// modern clients, but provide a text-safe response to that legacy user-agent.
+function isLegacyIPadSafari(req) {
+  var ua = (req.headers && req.headers['user-agent']) || '';
+  return /iPad; CPU OS (?:[0-9]|1[0-2])_[0-9_]+ like Mac OS X/.test(ua);
+}
+
+function emojiSafeCombined(data, req) {
+  if (!isLegacyIPadSafari(req)) return data;
+  return {
+    events: data.events.map(function (ev) {
+      return {
+        summary: ev.summary
+          .replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, '')
+          .replace(/️/g, '')
+          .replace(/‍/g, '')
+          .replace(/\s{2,}/g, ' ')
+          .trim(),
+        dtstart: ev.dtstart, allDay: ev.allDay, source: ev.source
+      };
+    }),
+    status: data.status
+  };
+}
+
 // Combined dashboard feed: nearest ten events across Bob's personal calendar
 // and the flamingo-filtered shared calendar. Each source is isolated so one
 // unavailable feed does not hide the other feed.
-function serveCombinedCalendars(res) {
+function serveCombinedCalendars(req, res) {
   var now = Date.now();
   if (combinedCalendarCache.data && now - combinedCalendarCache.ts < CACHE_MS) {
-    sendJSON(res, combinedCalendarCache.data);
+    sendJSON(res, emojiSafeCombined(combinedCalendarCache.data, req));
     return;
   }
 
@@ -482,7 +507,7 @@ function serveCombinedCalendars(res) {
     };
     combinedCalendarCache.data = result;
     combinedCalendarCache.ts = Date.now();
-    sendJSON(res, result);
+    sendJSON(res, emojiSafeCombined(result, req));
   }
 
   fetchUrl(CAL_URL, function (err, body) {
@@ -558,7 +583,7 @@ var server = http.createServer(function (req, res) {
   } else if (pathname === '/api/calendar2') {
     serveCalendar2(res, calendarCache2);
   } else if (pathname === '/api/calendars') {
-    serveCombinedCalendars(res);
+    serveCombinedCalendars(req, res);
   } else {
     // Static file
     if (pathname === '/') pathname = '/index.html';
