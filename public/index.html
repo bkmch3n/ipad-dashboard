@@ -765,6 +765,17 @@
     });
   }
 
+  function scheduleWorkStatusRefresh() {
+    var now = new Date();
+    var next = new Date(now);
+    next.setHours(12, 5, 0, 0);
+    if (next <= now) next.setDate(next.getDate() + 1);
+    setTimeout(function () {
+      fetchWorkStatus();
+      scheduleWorkStatusRefresh();
+    }, next.getTime() - now.getTime());
+  }
+
   function renderCalendarStatus(status) {
     var bob = status && status.bob ? '✅' : '❌';
     var decades = status && status.decades ? '✅' : '❌';
@@ -793,7 +804,7 @@
   setInterval(fetchWeather, 15 * 60 * 1000);
 
   fetchWorkStatus();
-  setInterval(fetchWorkStatus, 5 * 60 * 1000);
+  scheduleWorkStatusRefresh();
 
   fetchCalendar();
   setInterval(fetchCalendar, 15 * 60 * 1000);

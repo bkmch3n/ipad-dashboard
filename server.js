@@ -24,7 +24,7 @@ var GOOGLE_OAUTH_CLIENT_SECRET = process.env.GOOGLE_OAUTH_CLIENT_SECRET || '';
 var GOOGLE_OAUTH_REFRESH_TOKEN = process.env.GOOGLE_OAUTH_REFRESH_TOKEN || '';
 
 var CACHE_MS = 15 * 60 * 1000;
-var WORK_CACHE_MS = 5 * 60 * 1000;
+var WORK_CACHE_MS = 60 * 1000;
 
 var weatherCache   = { data: null, ts: 0 };
 var calendarCache  = { data: null, ts: 0 };
