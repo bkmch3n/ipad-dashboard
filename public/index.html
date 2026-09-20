@@ -324,8 +324,28 @@
       font-size: 13px;
       line-height: 1.35;
       color: rgba(255,255,255,0.72);
-      white-space: pre-line;
-      overflow: hidden;
+      white-space: nowrap;
+      overflow-x: auto;
+      overflow-y: hidden;
+      scrollbar-width: none;
+    }
+    #work-status::-webkit-scrollbar {
+      display: none;
+    }
+    .work-item {
+      display: inline-block;
+    }
+    .work-dot {
+      font-size: 12px;
+      margin-right: 3px;
+    }
+    .work-dot.work { color: #55d66f; }
+    .work-dot.part { color: #55d6d6; }
+    .work-dot.off { color: #999; }
+    .work-dot.note { color: #e7bd5a; }
+    .work-sep {
+      color: rgba(255,255,255,0.25);
+      padding: 0 6px;
     }
 
     /* ─────────────────────────────────────────────────────────
@@ -497,7 +517,7 @@
 
   <!-- ── WORK STATUS ───────────────────────────────────────── -->
   <div id="work-section">
-    <div id="work-label">Who's working today</div>
+    <div id="work-label">Work Schedule</div>
     <div id="work-status">Loading…</div>
   </div>
 
@@ -761,8 +781,23 @@
         console.error('work status:', err.message);
         return;
       }
-      setText('work-status', data.text || 'No work status for today');
+      setHTML('work-status', formatWorkStatus(data.text || 'No work status for today'));
     });
+  }
+
+  function formatWorkStatus(text) {
+    var lines = String(text).split(/\r?\n/);
+    var items = [];
+    for (var i = 0; i < lines.length; i++) {
+      var line = lines[i].replace(/^\s+|\s+$/g, '');
+      if (!line || /^\d{1,2}\/\d{1,2}\s/.test(line)) continue;
+      var kind = 'note';
+      if (line.indexOf('上班：') === 0) kind = 'work';
+      else if (line.indexOf('工讀：') === 0) kind = 'part';
+      else if (line.indexOf('休假：') === 0) kind = 'off';
+      items.push('<span class="work-item"><span class="work-dot ' + kind + '">●</span>' + esc(line) + '</span>');
+    }
+    return items.length ? items.join('<span class="work-sep">·</span>') : 'No work status for today';
   }
 
   function scheduleWorkStatusRefresh() {
