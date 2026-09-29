@@ -24,12 +24,15 @@ var GOOGLE_OAUTH_CLIENT_SECRET = process.env.GOOGLE_OAUTH_CLIENT_SECRET || '';
 var GOOGLE_OAUTH_REFRESH_TOKEN = process.env.GOOGLE_OAUTH_REFRESH_TOKEN || '';
 
 var CACHE_MS = 15 * 60 * 1000;
+var PARTIAL_FAILURE_CACHE_MS = 60 * 1000;
+var RETRY_DELAYS_MS = [500, 1500];
 var WORK_CACHE_MS = 60 * 1000;
 
 var weatherCache   = { data: null, ts: 0 };
 var calendarCache  = { data: null, ts: 0 };
 var calendarCache2 = { data: null, ts: 0 };
 var combinedCalendarCache = { data: null, ts: 0 };
+var lastGoodCalendarEvents = { bob: [], decades: [] };
 var workCache      = { data: null, ts: 0 };
 var oauthToken     = { accessToken: null, expiresAt: 0 };
 
@@ -60,6 +63,19 @@ function fetchUrl(urlStr, cb, hops, headers) {
 
   req.on('error', cb);
   req.setTimeout(12000, function () { req.destroy(new Error('timeout')); });
+}
+
+function fetchUrlWithRetry(urlStr, cb, headers, attempt) {
+  attempt = attempt || 0;
+  fetchUrl(urlStr, function (err, body) {
+    if (!err || attempt >= RETRY_DELAYS_MS.length) {
+      cb(err, body);
+      return;
+    }
+    setTimeout(function () {
+      fetchUrlWithRetry(urlStr, cb, headers, attempt + 1);
+    }, RETRY_DELAYS_MS[attempt]);
+  }, 0, headers);
 }
 
 // ── OAuth access token (refreshed from a stored refresh token) ───────────────
@@ -513,9 +529,14 @@ function emojiSafeCombined(data, req) {
 // unavailable feed does not hide the other feed.
 function serveCombinedCalendars(req, res) {
   var now = Date.now();
-  if (combinedCalendarCache.data && now - combinedCalendarCache.ts < CACHE_MS) {
-    sendJSON(res, emojiSafeCombined(combinedCalendarCache.data, req));
-    return;
+  if (combinedCalendarCache.data) {
+    var cacheAge = now - combinedCalendarCache.ts;
+    var cacheLimit = combinedCalendarCache.data.status.bob && combinedCalendarCache.data.status.decades
+      ? CACHE_MS : PARTIAL_FAILURE_CACHE_MS;
+    if (cacheAge < cacheLimit) {
+      sendJSON(res, emojiSafeCombined(combinedCalendarCache.data, req));
+      return;
+    }
   }
 
   var from = new Date(Date.now() - 86400 * 1000);
@@ -533,12 +554,27 @@ function serveCombinedCalendars(req, res) {
       events: merged,
       status: { bob: sources.bob.reachable, decades: sources.decades.reachable }
     };
-    combinedCalendarCache.data = result;
-    combinedCalendarCache.ts = Date.now();
+    // Keep the last known good events visible during a transient source failure,
+    // but expose the per-source reachability flags so Kuma can alert independently.
+    if (sources.bob.reachable) lastGoodCalendarEvents.bob = sources.bob.events.slice();
+    if (sources.decades.reachable) lastGoodCalendarEvents.decades = sources.decades.events.slice();
+    if (!sources.bob.reachable) sources.bob.events = lastGoodCalendarEvents.bob.slice();
+    if (!sources.decades.reachable) sources.decades.events = lastGoodCalendarEvents.decades.slice();
+    result.events = sources.bob.events.concat(sources.decades.events).sort(function (a, b) {
+      return a.dtstart - b.dtstart;
+    }).slice(0, 10);
+    if (result.status.bob || result.status.decades) {
+      combinedCalendarCache.data = result;
+      combinedCalendarCache.ts = Date.now();
+    } else {
+      // Never cache an all-source failure as a valid empty calendar response.
+      combinedCalendarCache.data = null;
+      combinedCalendarCache.ts = 0;
+    }
     sendJSON(res, emojiSafeCombined(result, req));
   }
 
-  fetchUrl(CAL_URL, function (err, body) {
+  fetchUrlWithRetry(CAL_URL, function (err, body) {
     if (!err) {
       try {
         var rawEvents = parseICS(body);
@@ -572,7 +608,7 @@ function serveCombinedCalendars(req, res) {
       '?timeMin=' + encodeURIComponent(timeMin) +
       '&timeMax=' + encodeURIComponent(timeMax) +
       '&singleEvents=true&orderBy=startTime&maxResults=50';
-    fetchUrl(apiUrl, function (err, body) {
+    fetchUrlWithRetry(apiUrl, function (err, body) {
       if (!err) {
         try {
           var parsed = JSON.parse(body);
@@ -589,7 +625,7 @@ function serveCombinedCalendars(req, res) {
         console.error('Combined decades calendar unavailable:', err.message);
       }
       finishOne();
-    }, 0, { 'Authorization': 'Bearer ' + accessToken });
+    }, { 'Authorization': 'Bearer ' + accessToken });
   });
 }
 
