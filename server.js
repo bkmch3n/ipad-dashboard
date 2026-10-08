@@ -539,7 +539,10 @@ function serveCombinedCalendars(req, res) {
     }
   }
 
-  var from = new Date(Date.now() - 86400 * 1000);
+  // Match the browser's visibility rule: retain an ongoing event for one
+  // hour, but do not spend the nearest-ten slots on older events that the
+  // client will immediately discard.
+  var from = new Date(Date.now() - 3600 * 1000);
   var to   = new Date(Date.now() + 90 * 86400 * 1000);
   var pending = 2;
   var sources = { bob: { reachable: false, events: [] }, decades: { reachable: false, events: [] } };
@@ -601,7 +604,7 @@ function serveCombinedCalendars(req, res) {
       finishOne();
       return;
     }
-    var timeMin = new Date(Date.now() - 86400 * 1000).toISOString();
+    var timeMin = new Date(Date.now() - 3600 * 1000).toISOString();
     var timeMax = new Date(Date.now() + 90 * 86400 * 1000).toISOString();
     var apiUrl = 'https://www.googleapis.com/calendar/v3/calendars/' +
       encodeURIComponent(CAL2_ID) + '/events' +
