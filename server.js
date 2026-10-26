@@ -14,7 +14,7 @@ var LON      = process.env.LON      || '121.5654';
 var CAL_URL  = process.env.CAL_URL  || 'https://calendar.google.com/calendar/ical/998e9ce98f4561652eff3f0e219639e83f3864e9aa83bf14a12fe9f430c619b6%40group.calendar.google.com/private-e7703b84c1d27821bca2f376a69e44b8/basic.ics';
 var CAL2_ID       = process.env.CAL2_ID || '7e6782b2f813aae415a8a2a49101ff55952b958e373f68872628a418c7ca9bea@group.calendar.google.com';
 var CAL2_COLOR_ID = '4'; // Flamingo
-var WORK_URL = 'https://docs.google.com/spreadsheets/d/1SEskEFXEnnA0PfnfKpY0rImpjgVGaDHUG4XLlJjDT94/gviz/tq?tqx=out:csv&sheet=TODAY&range=A1';
+var WORK_URL = 'https://docs.google.com/spreadsheets/d/1SEskEFXEnnA0PfnfKpY0rImpjgVGaDHUG4XLlJjDT94/gviz/tq?tqx=out:csv&sheet=TODAY&range=A1:A2';
 
 // calendar2 reads via OAuth (not an API key) because the user is a guest on that
 // calendar, not the owner — only OAuth-as-the-guest can read it without the owner
@@ -474,6 +474,41 @@ function serveCalendar2(res, cache) {
   });
 }
 
+function parseCSVCells(body) {
+  // The A1:A2 CSV export has one quoted cell per row. Parse CSV instead of
+  // splitting on newlines: the cell values themselves contain newlines.
+  var cells = [];
+  var value = '';
+  var quoted = false;
+  var text = String(body || '');
+  for (var i = 0; i < text.length; i++) {
+    var ch = text.charAt(i);
+    if (ch === '"') {
+      if (quoted && text.charAt(i + 1) === '"') { value += '"'; i++; }
+      else quoted = !quoted;
+    } else if ((ch === '\n' || ch === '\r') && !quoted) {
+      if (ch === '\r' && text.charAt(i + 1) === '\n') i++;
+      cells.push(value);
+      value = '';
+    } else if (ch === ',' && !quoted) {
+      cells.push(value);
+      value = '';
+    } else value += ch;
+  }
+  if (value || text) cells.push(value);
+  return cells;
+}
+
+function workScheduleFromCell(text) {
+  var lines = String(text || '').split(/\r?\n/);
+  var dateLabel = '';
+  for (var i = 0; i < lines.length; i++) {
+    var line = lines[i].replace(/^\s+|\s+$/g, '');
+    if (/^\d{1,2}\/\d{1,2}\s+/.test(line)) { dateLabel = line; break; }
+  }
+  return { dateLabel: dateLabel, text: String(text || '') };
+}
+
 function serveWorkStatus(res) {
   var now = Date.now();
   if (workCache.data && now - workCache.ts < WORK_CACHE_MS) {
@@ -486,13 +521,10 @@ function serveWorkStatus(res) {
       sendError(res, 502, 'Work status unavailable: ' + err.message);
       return;
     }
-    // A1 is a single CSV cell containing embedded newlines. Google wraps it
-    // in quotes; unwrap one outer pair while preserving the line breaks.
-    var text = (body || '').trim();
-    if (text.charAt(0) === '"' && text.charAt(text.length - 1) === '"') {
-      text = text.slice(1, -1).replace(/""/g, '"');
-    }
-    var result = { text: text, updatedAt: Date.now() };
+    var cells = parseCSVCells(body);
+    var schedules = [];
+    for (var i = 0; i < 2; i++) schedules.push(workScheduleFromCell(cells[i] || ''));
+    var result = { schedules: schedules, updatedAt: Date.now() };
     workCache.data = result;
     workCache.ts = Date.now();
     sendJSON(res, result);

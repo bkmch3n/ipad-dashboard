@@ -320,7 +320,7 @@
       letter-spacing: 0.5px;
       margin-bottom: 3px;
     }
-    #work-status {
+    .work-status {
       font-size: 13px;
       line-height: 1.35;
       color: rgba(255,255,255,0.72);
@@ -329,8 +329,13 @@
       overflow-y: hidden;
       scrollbar-width: none;
     }
-    #work-status::-webkit-scrollbar {
+    .work-status + .work-status { margin-top: 3px; }
+    .work-status::-webkit-scrollbar {
       display: none;
+    }
+    .work-date {
+      color: rgba(255,255,255,0.46);
+      margin-right: 8px;
     }
     .work-item {
       display: inline-block;
@@ -518,7 +523,8 @@
   <!-- ── WORK STATUS ───────────────────────────────────────── -->
   <div id="work-section">
     <div id="work-label">Work Schedule</div>
-    <div id="work-status">Loading…</div>
+    <div id="work-status-today" class="work-status">Loading…</div>
+    <div id="work-status-next" class="work-status">Loading…</div>
   </div>
 
   <!-- ── CALENDAR ──────────────────────────────────────────── -->
@@ -776,12 +782,19 @@
 
   function fetchWorkStatus() {
     get('/api/work-status', function (err, data) {
+      var targets = ['work-status-today', 'work-status-next'];
       if (err) {
-        setText('work-status', 'Work status unavailable');
+        for (var i = 0; i < targets.length; i++) setText(targets[i], 'Work status unavailable');
         console.error('work status:', err.message);
         return;
       }
-      setHTML('work-status', formatWorkStatus(data.text || 'No work status for today'));
+      var schedules = data.schedules || [];
+      for (var j = 0; j < targets.length; j++) {
+        var schedule = schedules[j] || {};
+        var status = formatWorkStatus(schedule.text || '');
+        var date = schedule.dateLabel ? '<span class="work-date">' + esc(schedule.dateLabel) + '</span>' : '';
+        setHTML(targets[j], date + status);
+      }
     });
   }
 
