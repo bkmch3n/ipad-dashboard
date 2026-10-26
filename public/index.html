@@ -264,7 +264,8 @@
     #clock-section {
       -webkit-flex-shrink: 0;
       flex-shrink: 0;
-      height: 172px;
+      /* Two schedule rows need room for the full event list. */
+      height: 120px;
       display: -webkit-flex;
       display: flex;
       -webkit-flex-direction: column;
@@ -277,7 +278,7 @@
     }
 
     #date-display {
-      font-size: 17px;
+      font-size: 15px;
       font-weight: 300;
       color: rgba(255,255,255,0.62);
       letter-spacing: 0.5px;
@@ -291,13 +292,13 @@
       align-items: flex-start;
     }
     #clock-hm {
-      font-size: 105px;
+      font-size: 90px;
       font-weight: 100;
       line-height: 1;
       letter-spacing: -2px;
     }
     #time-seconds {
-      font-size: 50px;
+      font-size: 42px;
       font-weight: 100;
       color: rgba(255,255,255,0.38);
       padding-top: 14px;
