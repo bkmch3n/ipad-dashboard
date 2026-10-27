@@ -449,6 +449,107 @@
       color: rgba(255,255,255,0.2);
       font-size: 12px;
     }
+
+    /* ── Calm operational refinement ──────────────────────────
+       Fixed 768 × 1024 iPad kiosk canvas; Safari-compatible CSS only. */
+    html, body {
+      background: #0a1017;
+      color: #e8eef5;
+    }
+    #app {
+      padding: 20px 16px 12px 16px;
+    }
+    .lbl, .hdr-lbl {
+      color: #8fa5b9;
+      font-size: 11px;
+      letter-spacing: 2.1px;
+    }
+    #wx-right .fc-hdr .fc-dtemp { font-size: 11px !important; }
+    #top-row {
+      height: 294px;
+      background: #121b26;
+      border: 1px solid #253647;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    #wx-left {
+      padding: 14px 16px 10px 18px;
+      border-right-color: #253647;
+    }
+    #wx-right {
+      padding: 14px 18px 10px 16px;
+    }
+    #current-main { margin-top: 2px; }
+    #current-temp { color: #f4f8fb; }
+    #current-feels, .dimmer, .fc-stat, .fc-day, .detail-line { color: #aab9c8; }
+    #current-desc { color: #c2d0dc; }
+    #hourly-divider, .fc-hdr, .hourly-col + .hourly-col, .hourly-col .fc-row, #daily-list .fc-row {
+      border-color: #233445;
+    }
+    #clock-section {
+      height: 120px;
+      margin-top: 10px;
+      background: #121b26;
+      border: 1px solid #253647;
+      border-radius: 10px;
+    }
+    #date-display {
+      color: #bdcbd8;
+      font-size: 15px;
+      letter-spacing: .35px;
+    }
+    #clock-hm { color: #f3f8fc; }
+    #time-seconds { color: #7691aa; }
+    #work-section {
+      margin-top: 10px;
+      padding: 8px 14px 9px 14px;
+      background: #121b26;
+      border: 1px solid #253647;
+      border-radius: 10px;
+    }
+    #work-label {
+      color: #8fa5b9;
+      font-size: 11px;
+      letter-spacing: 1.8px;
+      text-transform: uppercase;
+    }
+    .work-status { color: #c9d5df; }
+    .work-date { color: #8fc7ff; }
+    .work-dot.work { color: #6bd899; }
+    .work-dot.part { color: #7fbfff; }
+    .work-dot.off { color: #97a5b3; }
+    .work-dot.note { color: #efbf6a; }
+    .work-sep { color: #52677a; }
+    #calendar-section {
+      margin-top: 10px;
+      padding: 14px 14px 9px 14px;
+      background: #121b26;
+      border: 1px solid #253647;
+      border-radius: 10px;
+    }
+    .cal-block + .cal-block, .cal-footnote { border-color: #253647; }
+    .cal-header { margin-bottom: 7px; }
+    .cal-status { color: #a6b6c5; font-size: 12px; }
+    .cal-footnote { color: #8fa2b4; font-size: 11px; }
+    .cal-event {
+      padding: 8px 2px;
+      border-bottom-color: #213242;
+    }
+    .cal-event:before {
+      content: '';
+      width: 5px;
+      height: 5px;
+      margin-right: 9px;
+      border-radius: 5px;
+      background: #74baff;
+      -webkit-flex-shrink: 0;
+      flex-shrink: 0;
+    }
+    .cal-name { color: #e4ecf3; font-weight: 400; }
+    .cal-time { color: #9cb0c1; font-size: 15px; }
+    .cal-event.soon .cal-time { color: #f2c36d; }
+    .cal-empty { color: #8ca0b2; }
+    .loading { color: #7890a4; }
   </style>
 </head>
 <body>
