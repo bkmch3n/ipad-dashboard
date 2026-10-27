@@ -532,6 +532,8 @@
     .cal-status { color: #a6b6c5; font-size: 12px; }
     .cal-footnote { color: #8fa2b4; font-size: 11px; }
     .cal-event {
+      -webkit-justify-content: flex-start;
+      justify-content: flex-start;
       padding: 8px 2px;
       border-bottom-color: #213242;
     }
@@ -545,8 +547,14 @@
       -webkit-flex-shrink: 0;
       flex-shrink: 0;
     }
-    .cal-name { color: #e4ecf3; font-weight: 400; }
-    .cal-time { color: #9cb0c1; font-size: 15px; }
+    .cal-name {
+      color: #e4ecf3;
+      font-weight: 400;
+      -webkit-flex: 1;
+      flex: 1;
+      text-align: left;
+    }
+    .cal-time { color: #9cb0c1; font-size: 15px; margin-left: 8px; }
     .cal-event.soon .cal-time { color: #f2c36d; }
     .cal-empty { color: #8ca0b2; }
     .loading { color: #7890a4; }
