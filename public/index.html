@@ -489,17 +489,33 @@
     #clock-section {
       height: 120px;
       margin-top: 10px;
+      padding: 0 28px;
+      -webkit-flex-direction: row-reverse;
+      flex-direction: row-reverse;
+      -webkit-align-items: center;
+      align-items: center;
+      -webkit-justify-content: center;
+      justify-content: center;
       background: #121b26;
       border: 1px solid #253647;
       border-radius: 10px;
     }
     #date-display {
+      width: 150px;
+      margin-bottom: 0;
       color: #bdcbd8;
       font-size: 15px;
+      font-weight: 400;
       letter-spacing: .35px;
+      line-height: 1.25;
+      text-align: left;
     }
-    #clock-hm { color: #f3f8fc; }
-    #time-seconds { color: #7691aa; }
+    #date-display span { display: block; }
+    #clock-day { color: #d1dce6; }
+    #clock-date { color: #91a8bc; }
+    #time-wrapper { margin-right: 14px; }
+    #clock-hm { color: #f3f8fc; font-size: 98px; }
+    #time-seconds { color: #7691aa; font-size: 44px; padding-top: 17px; }
     #work-section {
       margin-top: 10px;
       padding: 8px 14px 9px 14px;
@@ -624,7 +640,7 @@
 
   <!-- ── CLOCK ─────────────────────────────────────────────── -->
   <div id="clock-section">
-    <div id="date-display">Loading…</div>
+    <div id="date-display"><span id="clock-day">Loading…</span><span id="clock-date"></span></div>
     <div id="time-wrapper">
       <span id="clock-hm">--:--</span><span id="time-seconds">--</span>
     </div>
@@ -699,11 +715,10 @@
     var now = new Date();
     setText('clock-hm',      pad(now.getHours()) + ':' + pad(now.getMinutes()));
     setText('time-seconds',  pad(now.getSeconds()));
-    setText('date-display',
-      DAY_FULL[now.getDay()] + ', ' +
-      MON_LONG[now.getMonth()] + ' ' +
-      now.getDate() + ', ' +
-      now.getFullYear()
+    setText('clock-day', DAY_FULL[now.getDay()].toUpperCase());
+    setText('clock-date',
+      MON_LONG[now.getMonth()].toUpperCase() + ' ' +
+      now.getDate() + ', ' + now.getFullYear()
     );
   }
 
