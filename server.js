@@ -15,6 +15,7 @@ var CAL_URL  = process.env.CAL_URL  || 'https://calendar.google.com/calendar/ica
 var CAL2_ID       = process.env.CAL2_ID || '7e6782b2f813aae415a8a2a49101ff55952b958e373f68872628a418c7ca9bea@group.calendar.google.com';
 var CAL2_COLOR_ID = '4'; // Flamingo
 var WORK_URL = 'https://docs.google.com/spreadsheets/d/1SEskEFXEnnA0PfnfKpY0rImpjgVGaDHUG4XLlJjDT94/gviz/tq?tqx=out:csv&sheet=TODAY&range=A1:A2';
+var GYM_OCCUPANCY_URL = 'https://tt01.xuanen.com.tw/eapp1/api/v1.0/wk/base/Getpc?b=1';
 
 // calendar2 reads via OAuth (not an API key) because the user is a guest on that
 // calendar, not the owner — only OAuth-as-the-guest can read it without the owner
@@ -531,6 +532,24 @@ function serveWorkStatus(res) {
   });
 }
 
+function serveGymOccupancy(res) {
+  fetchUrl(GYM_OCCUPANCY_URL, function (err, body) {
+    if (err) { sendError(res, 502, 'Gym occupancy unavailable: ' + err.message); return; }
+    try {
+      var parsed = JSON.parse(body);
+      var data = parsed && parsed.resultdata;
+      var current = data && parseInt(data.fitpc, 10);
+      var maximum = data && parseInt(data.fitmax, 10);
+      if (parsed.rs !== 0 || isNaN(current) || isNaN(maximum) || maximum <= 0 || current < 0) {
+        throw new Error('Invalid gym occupancy response');
+      }
+      sendJSON(res, { current: current, maximum: maximum, updatedAt: Date.now() });
+    } catch (e) {
+      sendError(res, 502, 'Gym occupancy unavailable: ' + e.message);
+    }
+  });
+}
+
 // iPad 2-era Safari cannot render many astral-plane emoji. Keep emoji for
 // modern clients, but provide a text-safe response to that legacy user-agent.
 function isLegacyIPadSafari(req) {
@@ -685,6 +704,8 @@ var server = http.createServer(function (req, res) {
     serveCombinedCalendars(req, res);
   } else if (pathname === '/api/work-status') {
     serveWorkStatus(res);
+  } else if (pathname === '/api/gym-occupancy') {
+    serveGymOccupancy(res);
   } else {
     // Static file
     if (pathname === '/') pathname = '/index.html';

@@ -489,13 +489,13 @@
     #clock-section {
       height: 120px;
       margin-top: 10px;
-      padding: 0 28px;
+      padding: 0 18px;
       -webkit-flex-direction: row;
       flex-direction: row;
       -webkit-align-items: center;
       align-items: center;
-      -webkit-justify-content: center;
-      justify-content: center;
+      -webkit-justify-content: flex-start;
+      justify-content: flex-start;
       background: #121b26;
       border: 1px solid #253647;
       border-radius: 10px;
@@ -516,6 +516,25 @@
     #time-wrapper { margin-left: 14px; }
     #clock-hm { color: #f3f8fc; font-size: 98px; }
     #time-seconds { color: #7691aa; font-size: 44px; padding-top: 17px; }
+    #gym-occupancy {
+      width: 96px;
+      height: 92px;
+      margin-left: auto;
+      border: 1px solid #36516a;
+      border-radius: 8px;
+      background: #0d1620;
+      color: #e8f3fa;
+      font-family: -apple-system, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      text-align: center;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+    #gym-occupancy:active { background: #162536; border-color: #79baff; }
+    #gym-occupancy.is-loading { opacity: .55; }
+    .gym-label { display: block; margin-top: 11px; font-size: 12px; color: #a9c7de; }
+    .gym-count { display: block; margin-top: 2px; font-size: 26px; line-height: 1; font-weight: 300; }
+    .gym-slash { padding: 0 2px; color: #718aa0; font-size: 18px; }
+    .gym-unit { display: block; margin-top: 3px; font-size: 11px; color: #8ea6b9; }
     #work-section {
       margin-top: 10px;
       padding: 8px 14px 9px 14px;
@@ -644,6 +663,11 @@
     <div id="time-wrapper">
       <span id="clock-hm">--:--</span><span id="time-seconds">--</span>
     </div>
+    <button id="gym-occupancy" type="button" title="Refresh gym occupancy">
+      <span class="gym-label">天天健</span>
+      <span class="gym-count"><span id="gym-current">--</span><span class="gym-slash">/</span><span id="gym-maximum">--</span></span>
+      <span class="gym-unit">人</span>
+    </button>
   </div>
 
   <!-- ── WORK STATUS ───────────────────────────────────────── -->
@@ -923,6 +947,22 @@
     });
   }
 
+  function fetchGymOccupancy() {
+    var button = el('gym-occupancy');
+    if (button) button.className = 'is-loading';
+    get('/api/gym-occupancy', function (err, data) {
+      if (button) button.className = '';
+      if (err || !data) {
+        setText('gym-current', '--');
+        setText('gym-maximum', '--');
+        console.error('gym occupancy:', err && err.message);
+        return;
+      }
+      setText('gym-current', data.current);
+      setText('gym-maximum', data.maximum);
+    });
+  }
+
   function formatWorkStatus(text) {
     var lines = String(text).split(/\r?\n/);
     var items = [];
@@ -978,6 +1018,9 @@
 
   fetchWorkStatus();
   scheduleWorkStatusRefresh();
+
+  fetchGymOccupancy();
+  el('gym-occupancy').onclick = fetchGymOccupancy;
 
   fetchCalendar();
   setInterval(fetchCalendar, 15 * 60 * 1000);
