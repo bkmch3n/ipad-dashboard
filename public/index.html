@@ -1020,6 +1020,8 @@
   scheduleWorkStatusRefresh();
 
   fetchGymOccupancy();
+  // Keep the gym count current even when the kiosk stays open all day.
+  setInterval(fetchGymOccupancy, 5 * 60 * 1000);
   el('gym-occupancy').onclick = fetchGymOccupancy;
 
   fetchCalendar();
